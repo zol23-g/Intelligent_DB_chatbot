@@ -19,3 +19,8 @@ def get_db():
 def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_db)):
     reply = handle_chat(db, payload.user_id, payload.message)
     return ChatResponse(reply=reply, timestamp=datetime.utcnow())
+
+@router.get("/{user_id}", response_model=list[dict])
+def get_chat_messages(user_id: str, db: Session = Depends(get_db)):
+    from app.services.db_service import get_chat_history
+    return get_chat_history(db, user_id)
