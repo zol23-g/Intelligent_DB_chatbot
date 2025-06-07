@@ -1,13 +1,22 @@
-#  app/services/llm_service.py
-import openai
+# backend/app/services/llm_service.py
+import cohere
 from app.config import settings
 
-openai.api_key = settings.OPENAI_API_KEY
+co = cohere.Client(settings.COHERE_API_KEY)
 
 def generate_llm_reply(history: list[dict], new_message: str) -> str:
-    messages = history + [{"role": "user", "content": new_message}]
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages
+    # Convert to cohere's format
+    cohere_messages = [
+        {"role": msg["role"], "message": msg["content"]} for msg in history
+    ]
+    cohere_messages.append({"role": "USER", "message": new_message})
+
+    response = co.chat(
+        model="command-r",  # Or "command-r-plus" if allowed
+        message=new_message,
+        chat_history=cohere_messages[:-1],  # only previous history
+        temperature=0.7,
+        max_tokens=300
     )
-    return response['choices'][0]['message']['content']
+
+    return response.text.strip()
